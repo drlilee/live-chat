@@ -1,0 +1,26 @@
+{
+  "name": "portfolio-site",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "dev:server": "node server.js",
+    "build": "vite build",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "react-router-dom": "^7.15.0",
+    "socket.io": "^4.8.3",
+    "socket.io-client": "^4.8.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.2.4",
+    "@vitejs/plugin-react": "^6.0.1",
+    "tailwindcss": "^4.2.4",
+    "vite": "^8.0.11"
+  }
+}
