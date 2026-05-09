@@ -65,16 +65,6 @@ export default function Admin() {
 
   const sendMessage = () => {
     if (!text.trim() || !activeId || !socket.current) return
-    const msg = {
-      id: `m_${Date.now()}`,
-      from: 'admin',
-      text,
-      time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
-    }
-    setConversations(prev => ({
-      ...prev,
-      [activeId]: [...(prev[activeId] || []), msg],
-    }))
     socket.current.emit('send-to-visitor', { visitorId: activeId, text })
     setText('')
     inputRef.current?.focus()
