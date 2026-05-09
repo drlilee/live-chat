@@ -19,7 +19,7 @@ function MessageBubble({ msg, isMe }) {
               }`
         }`}>
           {isImage ? (
-            <img src={msg.image} alt="sent" className="max-w-full rounded-lg" style={{ maxHeight: 300 }} />
+            <img src={msg.image} alt="sent" className="rounded-lg" style={{ maxWidth: 280, maxHeight: 300 }} />
           ) : (
             msg.text
           )}
