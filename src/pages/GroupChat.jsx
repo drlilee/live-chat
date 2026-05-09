@@ -30,6 +30,7 @@ export default function GroupChat() {
     s.on('message-recalled', (msgId) => removeMessage(msgId))
     s.on('kicked', () => setKicked(true))
     s.on('all-messages-cleared', () => clearMessages())
+    s.on('broadcast', (msg) => addMessage(msg))
 
     return () => {
       s.off('user-list')
@@ -39,6 +40,7 @@ export default function GroupChat() {
       s.off('message-recalled')
       s.off('kicked')
       s.off('all-messages-cleared')
+      s.off('broadcast')
     }
   }, [socket, connected])
 
@@ -231,7 +233,26 @@ export default function GroupChat() {
               const mine = isMe(msg)
               const isImg = msg.type === 'image'
               const isFile = msg.type === 'file'
+              const isBroadcast = msg.type === 'broadcast'
               const mentionsMe = me && msg.text && (msg.text.includes(`@${me.name}`) || msg.text.includes('@所有人'))
+
+              if (isBroadcast) {
+                return (
+                  <div key={msg.id} className="flex justify-center mb-4 px-4">
+                    <div className="max-w-md w-full rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-600 p-3 text-center">
+                      <div className="flex items-center justify-center gap-1 mb-1">
+                        <svg className="w-4 h-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+                        </svg>
+                        <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">📢 管理广播</span>
+                      </div>
+                      <p className="text-sm text-amber-800 dark:text-amber-200">{msg.text}</p>
+                      <p className="text-[10px] text-amber-500 mt-1">{msg.time}</p>
+                    </div>
+                  </div>
+                )
+              }
+
               return (
                 <div key={msg.id} className={`flex ${mine ? 'justify-end' : 'justify-start'} mb-4 px-4`}>
                   <div className={`max-w-[70%] ${mentionsMe ? 'ring-2 ring-blue-400/50 rounded-lg' : ''}`}>

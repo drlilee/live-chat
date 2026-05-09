@@ -102,6 +102,19 @@ io.on('connection', (socket) => {
     }
   })
 
+  socket.on('broadcast', (text) => {
+    if (!io.sockets.adapter.rooms.get('admins')?.has(socket.id)) return
+    const msg = {
+      id: `b_${Date.now()}`,
+      type: 'broadcast',
+      text,
+      time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+    }
+    messageHistory.push(msg)
+    if (messageHistory.length > MAX_HISTORY) messageHistory.shift()
+    io.to('group').emit('broadcast', msg)
+  })
+
   socket.on('clear-all-messages', () => {
     if (!io.sockets.adapter.rooms.get('admins')?.has(socket.id)) return
     messageHistory.length = 0

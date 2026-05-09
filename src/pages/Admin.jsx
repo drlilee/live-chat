@@ -65,6 +65,7 @@ export default function Admin() {
   const [messages, setMessages] = useState(loadAdminMessages)
   const [kickMode, setKickMode] = useState(false)
   const [kickTarget, setKickTarget] = useState(null)
+  const [broadcastText, setBroadcastText] = useState('')
   const socketRef = useRef(null)
   const bottomRef = useRef(null)
 
@@ -149,6 +150,28 @@ export default function Admin() {
           <ThemeToggle light />
         </div>
       </header>
+
+      {/* Broadcast bar */}
+      <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-800 shrink-0">
+        <svg className="w-4 h-4 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+        </svg>
+        <input
+          type="text"
+          value={broadcastText}
+          onChange={e => setBroadcastText(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') { socketRef.current?.emit('broadcast', broadcastText); setBroadcastText('') }}}
+          placeholder="输入广播内容，回车发送..."
+          className="flex-1 px-3 py-1.5 rounded-md bg-white dark:bg-gray-700 text-sm outline-none border border-amber-200 dark:border-amber-700 focus:ring-2 focus:ring-amber-500/20"
+        />
+        <button
+          onClick={() => { socketRef.current?.emit('broadcast', broadcastText); setBroadcastText('') }}
+          disabled={!broadcastText.trim()}
+          className="px-4 py-1.5 rounded-md bg-amber-500 text-white text-sm font-medium hover:bg-amber-600 disabled:opacity-40 transition-colors cursor-pointer shrink-0"
+        >
+          广播
+        </button>
+      </div>
 
       <div className="flex-1 flex min-h-0">
         {/* User list */}
