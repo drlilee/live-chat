@@ -71,7 +71,7 @@ export default function GroupChat() {
       {/* Header */}
       <header className="h-12 flex items-center justify-between px-4 bg-primary-500 shrink-0">
         <div className="flex items-center gap-2">
-          <span className="text-white font-semibold text-sm">聊天室</span>
+          <span className="text-white font-semibold text-sm">三1班八卦群</span>
           <span className={`w-2 h-2 rounded-full ${connected ? 'bg-green-300' : 'bg-red-400'}`} />
           <span className="text-white/70 text-xs">{users.length} 人在线</span>
         </div>
