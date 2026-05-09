@@ -2,6 +2,25 @@ import { useState, useEffect, useRef } from 'react'
 import { io } from 'socket.io-client'
 import ThemeToggle from '../components/ui/ThemeToggle'
 
+const ADMIN_KEY = 'admin_chat_messages'
+const MAX_STORED = 500
+
+function loadAdminMessages() {
+  try {
+    const raw = localStorage.getItem(ADMIN_KEY)
+    return raw ? JSON.parse(raw) : []
+  } catch { return [] }
+}
+
+function mergeAdminMessages(saved, server) {
+  const ids = new Set(saved.map(m => m.id))
+  const merged = [...saved]
+  for (const m of server) {
+    if (!ids.has(m.id)) { merged.push(m); ids.add(m.id) }
+  }
+  return merged.slice(-MAX_STORED)
+}
+
 function PasswordModal({ onSubmit, error }) {
   const [pwd, setPwd] = useState('')
   return (
@@ -42,7 +61,7 @@ export default function Admin() {
   const [authed, setAuthed] = useState(false)
   const [authError, setAuthError] = useState('')
   const [users, setUsers] = useState([])
-  const [messages, setMessages] = useState([])
+  const [messages, setMessages] = useState(loadAdminMessages)
   const socketRef = useRef(null)
   const bottomRef = useRef(null)
 
@@ -52,6 +71,11 @@ export default function Admin() {
       if (res.ok) {
         setAuthed(true)
         setUsers(res.users || [])
+        if (res.history && res.history.length > 0) {
+          const saved = loadAdminMessages()
+          const merged = mergeAdminMessages(saved, res.history)
+          setMessages(merged)
+        }
       } else {
         setAuthError('密码错误')
       }
@@ -65,7 +89,13 @@ export default function Admin() {
     s.on('user-list', (list) => setUsers(list))
     s.on('user-joined', (u) => setUsers(prev => prev.find(x => x.id === u.id) ? prev : [...prev, u]))
     s.on('user-left', (id) => setUsers(prev => prev.filter(x => x.id !== id)))
-    s.on('message', (msg) => setMessages(prev => [...prev, msg]))
+    s.on('message', (msg) => {
+      setMessages(prev => {
+        const next = [...prev, msg].slice(-MAX_STORED)
+        try { localStorage.setItem(ADMIN_KEY, JSON.stringify(next)) } catch {}
+        return next
+      })
+    })
 
     return () => { s.disconnect() }
   }, [])

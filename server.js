@@ -20,8 +20,10 @@ app.use((_req, res) => {
 const colors = ['#f43f5e','#8b5cf6','#06b6d4','#f59e0b','#10b981','#6366f1',
   '#ec4899','#14b8a6','#f97316','#3b82f6','#e11d48','#7c3aed']
 
-const users = new Map()      // socketId -> { id, name, color }
+const users = new Map()
 const adminPassword = 'admin123'
+const messageHistory = []  // last 200 messages
+const MAX_HISTORY = 200
 
 io.on('connection', (socket) => {
   let user = null
@@ -37,7 +39,7 @@ io.on('connection', (socket) => {
     socket.join('group')
 
     console.log(`${cleanName} joined (${users.size} online)`)
-    socket.emit('welcome', user)
+    socket.emit('welcome', { user, history: messageHistory })
     io.to('group').emit('user-joined', user)
     io.to('group').emit('user-list', Array.from(users.values()))
   })
@@ -54,15 +56,16 @@ io.on('connection', (socket) => {
       image: data.image || '',
       time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
     }
+    messageHistory.push(msg)
+    if (messageHistory.length > MAX_HISTORY) messageHistory.shift()
     io.to('group').emit('message', msg)
   })
 
-  // Admin auth
   socket.on('admin-auth', (password, cb) => {
     if (password === adminPassword) {
       socket.join('admins')
       socket.join('group')
-      cb({ ok: true, users: Array.from(users.values()) })
+      cb({ ok: true, users: Array.from(users.values()), history: messageHistory })
     } else {
       cb({ ok: false })
     }

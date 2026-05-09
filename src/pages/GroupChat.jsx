@@ -5,9 +5,8 @@ import NameModal from '../components/ui/NameModal'
 import ThemeToggle from '../components/ui/ThemeToggle'
 
 export default function GroupChat() {
-  const { socket, connected, me } = useSocket()
+  const { socket, connected, me, history, addMessage } = useSocket()
   const [users, setUsers] = useState([])
-  const [messages, setMessages] = useState([])
   const [text, setText] = useState('')
   const bottomRef = useRef(null)
   const inputRef = useRef(null)
@@ -19,7 +18,7 @@ export default function GroupChat() {
     s.on('user-list', (list) => setUsers(list))
     s.on('user-joined', (user) => setUsers(prev => prev.find(u => u.id === user.id) ? prev : [...prev, user]))
     s.on('user-left', (id) => setUsers(prev => prev.filter(u => u.id !== id)))
-    s.on('message', (msg) => setMessages(prev => [...prev, msg]))
+    s.on('message', (msg) => addMessage(msg))
 
     return () => {
       s.off('user-list')
@@ -29,7 +28,7 @@ export default function GroupChat() {
     }
   }, [socket, connected])
 
-  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages])
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [history])
 
   const handleJoin = (name) => {
     if (socket.current) {
@@ -101,10 +100,10 @@ export default function GroupChat() {
         {/* Chat area */}
         <div className="flex-1 flex flex-col min-w-0">
           <div className="flex-1 overflow-y-auto py-4 bg-gray-50 dark:bg-gray-800/30">
-            {messages.length === 0 && (
+            {history.length === 0 && (
               <div className="text-center mt-20 text-gray-400 text-sm">暂无消息，来打个招呼吧</div>
             )}
-            {messages.map(msg => {
+            {history.map(msg => {
               const mine = isMe(msg)
               const isImg = msg.type === 'image'
               return (
