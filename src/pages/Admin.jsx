@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { io } from 'socket.io-client'
+import { formatSize } from '../utils/file'
 import ThemeToggle from '../components/ui/ThemeToggle'
 
 const ADMIN_KEY = 'admin_chat_messages'
@@ -179,19 +180,35 @@ export default function Admin() {
           <div className="flex-1 overflow-y-auto py-4 bg-gray-50 dark:bg-gray-800/30">
             {messages.map(msg => {
               const isImg = msg.type === 'image'
+              const isFile = msg.type === 'file'
               return (
                 <div key={msg.id} className="flex justify-start mb-4 px-4">
                   <div className="max-w-[70%]">
                     <p className="text-xs mb-1 ml-1" style={{ color: msg.color }}>{msg.name}</p>
                     <div className={`rounded-lg overflow-hidden ${
-                      isImg
+                      isImg || isFile
                         ? 'bg-transparent'
                         : 'px-3 py-2 text-sm leading-relaxed bg-white dark:bg-gray-700 shadow-sm border border-gray-100 dark:border-gray-600 rounded-bl-sm'
                     }`}>
-                      {isImg
-                        ? <img src={msg.image} alt="" className="rounded-lg" style={{ maxWidth: 280, maxHeight: 300 }} />
-                        : msg.text
-                      }
+                      {isImg ? (
+                        <img src={msg.image} alt="" className="rounded-lg" style={{ maxWidth: 280, maxHeight: 300 }} />
+                      ) : isFile ? (
+                        <a href={msg.file?.data} download={msg.file?.name}
+                          className="flex items-center gap-3 px-4 py-3 rounded-lg bg-white dark:bg-gray-700 shadow-sm border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors cursor-pointer no-underline">
+                          <svg className="w-8 h-8 shrink-0 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                          </svg>
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium truncate">{msg.file?.name}</p>
+                            <p className="text-xs text-gray-400">{formatSize(msg.file?.size || 0)}</p>
+                          </div>
+                          <svg className="w-5 h-5 shrink-0 ml-auto text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                          </svg>
+                        </a>
+                      ) : (
+                        msg.text
+                      )}
                     </div>
                     <p className="text-[10px] text-gray-400 mt-1 text-left">{msg.time}</p>
                   </div>

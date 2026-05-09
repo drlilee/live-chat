@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useSocket } from '../hooks/useSocket'
 import { pickAndResizeImage } from '../utils/image'
+import { pickFile, formatSize } from '../utils/file'
 import NameModal from '../components/ui/NameModal'
 import ThemeToggle from '../components/ui/ThemeToggle'
 import EmojiPicker from '../components/chat/EmojiPicker'
@@ -87,6 +88,16 @@ export default function GroupChat() {
     } catch { /* cancelled */ }
   }
 
+  const sendFile = async () => {
+    if (!socket.current) return
+    try {
+      const file = await pickFile()
+      socket.current.emit('chat', { type: 'file', file, text: '' })
+    } catch (e) {
+      if (e?.message) alert(e.message)
+    }
+  }
+
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
@@ -168,6 +179,7 @@ export default function GroupChat() {
             {history.map(msg => {
               const mine = isMe(msg)
               const isImg = msg.type === 'image'
+              const isFile = msg.type === 'file'
               return (
                 <div key={msg.id} className={`flex ${mine ? 'justify-end' : 'justify-start'} mb-4 px-4`}>
                   <div className="max-w-[70%]">
@@ -175,7 +187,7 @@ export default function GroupChat() {
                       <p className="text-xs mb-1 ml-1" style={{ color: msg.color }}>{msg.name}</p>
                     )}
                     <div className={`rounded-lg overflow-hidden ${
-                      isImg
+                      isImg || isFile
                         ? 'bg-transparent'
                         : `px-3 py-2 text-sm leading-relaxed wrap-break-word ${
                             mine
@@ -183,10 +195,29 @@ export default function GroupChat() {
                               : 'bg-white dark:bg-gray-700 shadow-sm border border-gray-100 dark:border-gray-600 rounded-bl-sm'
                           }`
                     }`}>
-                      {isImg
-                        ? <img src={msg.image} alt="" className="rounded-lg" style={{ maxWidth: 280, maxHeight: 300 }} />
-                        : msg.text
-                      }
+                      {isImg ? (
+                        <img src={msg.image} alt="" className="rounded-lg" style={{ maxWidth: 280, maxHeight: 300 }} />
+                      ) : isFile ? (
+                        <a href={msg.file?.data} download={msg.file?.name}
+                          className={`flex items-center gap-3 px-4 py-3 rounded-lg ${
+                            mine
+                              ? 'bg-primary-600 text-white hover:bg-primary-700'
+                              : 'bg-white dark:bg-gray-700 shadow-sm border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600'
+                          } transition-colors cursor-pointer no-underline`}>
+                          <svg className="w-8 h-8 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                          </svg>
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium truncate">{msg.file?.name}</p>
+                            <p className="text-xs opacity-80">{formatSize(msg.file?.size || 0)}</p>
+                          </div>
+                          <svg className="w-5 h-5 shrink-0 ml-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                          </svg>
+                        </a>
+                      ) : (
+                        msg.text
+                      )}
                     </div>
                     <div className={`flex items-center gap-1 mt-1 ${mine ? 'justify-end' : 'justify-start'}`}>
                       <p className="text-[10px] text-gray-400">{msg.time}</p>
@@ -223,6 +254,12 @@ export default function GroupChat() {
               className="p-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 transition-colors cursor-pointer shrink-0 text-gray-500">
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </button>
+            <button onClick={sendFile} disabled={!connected}
+              className="p-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 transition-colors cursor-pointer shrink-0 text-gray-500">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
               </svg>
             </button>
             <textarea ref={inputRef} value={text} onChange={e => setText(e.target.value)} onKeyDown={handleKeyDown}

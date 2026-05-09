@@ -60,6 +60,7 @@ io.on('connection', (socket) => {
       type: data.type || 'text',
       text: data.text || '',
       image: data.image || '',
+      file: data.file || null,
       time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
     }
     messageHistory.push(msg)
