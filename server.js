@@ -22,8 +22,14 @@ const colors = ['#f43f5e','#8b5cf6','#06b6d4','#f59e0b','#10b981','#6366f1',
 
 const users = new Map()
 const adminPassword = 'admin123'
-const messageHistory = []  // last 200 messages
+const messageHistory = []
 const MAX_HISTORY = 200
+
+const announcement = {
+  id: 'announcement',
+  type: 'system',
+  text: '进入"三1班八卦群"，请文明用语，不能刷屏，谢谢。\n发布者：威风的龙lele',
+}
 
 io.on('connection', (socket) => {
   let user = null
@@ -39,7 +45,7 @@ io.on('connection', (socket) => {
     socket.join('group')
 
     console.log(`${cleanName} joined (${users.size} online)`)
-    socket.emit('welcome', { user, history: messageHistory })
+    socket.emit('welcome', { user, history: messageHistory, announcement })
     io.to('group').emit('user-joined', user)
     io.to('group').emit('user-list', Array.from(users.values()))
   })

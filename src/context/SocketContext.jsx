@@ -17,6 +17,7 @@ export function SocketProvider({ children }) {
   const [connected, setConnected] = useState(false)
   const [me, setMe] = useState(null)
   const [history, setHistory] = useState(loadMessages)
+  const [announcement, setAnnouncement] = useState(null)
   const socketRef = useRef(null)
 
   useEffect(() => {
@@ -26,6 +27,7 @@ export function SocketProvider({ children }) {
     socket.on('disconnect', () => setConnected(false))
     socket.on('welcome', (data) => {
       setMe(data.user)
+      if (data.announcement) setAnnouncement(data.announcement)
       if (data.history && data.history.length > 0) {
         const merged = mergeMessages(loadMessages(), data.history)
         setHistory(merged)
@@ -43,7 +45,7 @@ export function SocketProvider({ children }) {
   }
 
   return (
-    <SocketContext.Provider value={{ socket: socketRef, connected, me, history, addMessage }}>
+    <SocketContext.Provider value={{ socket: socketRef, connected, me, history, addMessage, announcement }}>
       {children}
     </SocketContext.Provider>
   )
