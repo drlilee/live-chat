@@ -12,8 +12,12 @@ const io = new Server(http, {
   cors: { origin: '*' },
 })
 
-// Serve static files in production
-app.use(express.static(join(__dirname, 'dist')))
+// Serve static files in production (no caching for SPA)
+app.use(express.static(join(__dirname, 'dist'), {
+  setHeaders: (res) => {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate')
+  }
+}))
 
 // SPA fallback: all non-static routes go to index.html
 app.use((_req, res) => {
@@ -33,19 +37,26 @@ io.on('connection', (socket) => {
     socket.emit('visitor-list', Array.from(visitors.values()))
 
     socket.on('send-to-visitor', ({ visitorId, text }) => {
+      console.log(`Admin sending to visitor ${visitorId}: ${text}`)
       const msg = {
         id: `m_${Date.now()}`,
         from: 'admin',
         text,
         time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
       }
+      let found = false
       for (const [sid, v] of visitors) {
         if (v.id === visitorId) {
           io.to(sid).emit('message', msg)
+          console.log(`  -> delivered to visitor socket ${sid}`)
+          found = true
           break
         }
       }
+      if (!found) console.log(`  -> visitor not found!`)
       // Echo to all admins
+      const admins = io.sockets.adapter.rooms.get('admins')
+      console.log(`  -> echoing to admins room (${admins ? admins.size : 0} admins)`)
       io.to('admins').emit('message', { ...msg, visitorId })
     })
 
@@ -75,6 +86,7 @@ io.on('connection', (socket) => {
   socket.emit('welcome', visitor)
 
   socket.on('visitor-message', (data) => {
+    console.log(`Visitor ${visitor.name} says: ${data.text}`)
     const msg = {
       id: `m_${Date.now()}`,
       from: 'visitor',
@@ -83,6 +95,8 @@ io.on('connection', (socket) => {
       text: data.text,
       time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
     }
+    const admins = io.sockets.adapter.rooms.get('admins')
+    console.log(`  -> forwarding to admins room (${admins ? admins.size : 0} admins)`)
     io.to('admins').emit('message', msg)
 
     const v = visitors.get(socket.id)
