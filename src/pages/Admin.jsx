@@ -80,7 +80,7 @@ export default function Admin() {
     <div className="h-screen flex flex-col bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
       <header className="h-12 flex items-center justify-between px-4 bg-gray-800 shrink-0">
         <div className="flex items-center gap-2">
-          <span className="text-white font-semibold text-sm">管理后台</span>
+          <span className="text-white font-semibold text-sm">三1班八卦群管理端</span>
           <span className="text-white/70 text-xs">{users.length} 人在线</span>
         </div>
         <ThemeToggle light />
