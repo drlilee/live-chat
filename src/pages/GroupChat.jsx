@@ -63,7 +63,7 @@ export default function GroupChat() {
 
   // Show name modal until user has joined
   if (!me) {
-    return <NameModal onJoin={handleJoin} />
+    return <NameModal onJoin={handleJoin} connecting={!connected} />
   }
 
   return (

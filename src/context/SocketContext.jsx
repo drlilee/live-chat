@@ -13,7 +13,7 @@ export function SocketProvider({ children }) {
     socketRef.current = socket
     socket.on('connect', () => setConnected(true))
     socket.on('disconnect', () => setConnected(false))
-    socket.on('welcome', (data) => setMe(data.you))
+    socket.on('welcome', (user) => setMe(user))
     return () => { socket.disconnect() }
   }, [])
 

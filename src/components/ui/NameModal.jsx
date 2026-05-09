@@ -1,20 +1,14 @@
 import { useState } from 'react'
 
-export default function NameModal({ onJoin }) {
+export default function NameModal({ onJoin, connecting }) {
   const [name, setName] = useState('')
   const [error, setError] = useState('')
 
   const handleSubmit = (e) => {
     e.preventDefault()
     const trimmed = name.trim()
-    if (!trimmed) {
-      setError('请输入昵称')
-      return
-    }
-    if (trimmed.length > 12) {
-      setError('昵称最多 12 个字')
-      return
-    }
+    if (!trimmed) { setError('请输入昵称'); return }
+    if (trimmed.length > 12) { setError('昵称最多 12 个字'); return }
     onJoin(trimmed)
   }
 
@@ -32,19 +26,17 @@ export default function NameModal({ onJoin }) {
         </div>
         <form onSubmit={handleSubmit}>
           <input
-            type="text"
-            value={name}
+            type="text" value={name}
             onChange={e => { setName(e.target.value); setError('') }}
-            placeholder="请输入你的昵称"
-            autoFocus
+            placeholder="请输入你的昵称" autoFocus
             className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-sm outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 mb-3"
           />
           {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
           <button
-            type="submit"
-            className="w-full py-3 rounded-lg bg-primary-500 text-white font-medium hover:bg-primary-600 transition-colors cursor-pointer"
+            type="submit" disabled={connecting}
+            className="w-full py-3 rounded-lg bg-primary-500 text-white font-medium hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
           >
-            进入聊天
+            {connecting ? '连接中...' : '进入聊天'}
           </button>
         </form>
       </div>
