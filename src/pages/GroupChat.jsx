@@ -5,7 +5,7 @@ import NameModal from '../components/ui/NameModal'
 import ThemeToggle from '../components/ui/ThemeToggle'
 
 export default function GroupChat() {
-  const { socket, connected, me, history, addMessage, removeMessage, announcement } = useSocket()
+  const { socket, connected, me, history, addMessage, removeMessage, clearMessages, announcement } = useSocket()
   const [users, setUsers] = useState([])
   const [text, setText] = useState('')
   const [kicked, setKicked] = useState(false)
@@ -22,6 +22,7 @@ export default function GroupChat() {
     s.on('message', (msg) => addMessage(msg))
     s.on('message-recalled', (msgId) => removeMessage(msgId))
     s.on('kicked', () => setKicked(true))
+    s.on('all-messages-cleared', () => clearMessages())
 
     return () => {
       s.off('user-list')
@@ -30,6 +31,7 @@ export default function GroupChat() {
       s.off('message')
       s.off('message-recalled')
       s.off('kicked')
+      s.off('all-messages-cleared')
     }
   }, [socket, connected])
 

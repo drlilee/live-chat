@@ -105,6 +105,10 @@ export default function Admin() {
         return next
       })
     })
+    s.on('all-messages-cleared', () => {
+      setMessages([])
+      try { localStorage.removeItem(ADMIN_KEY) } catch {}
+    })
 
     return () => { s.disconnect() }
   }, [])
@@ -123,6 +127,16 @@ export default function Admin() {
           <span className="text-white/70 text-xs">{users.length} 人在线</span>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              if (confirm('确定要删除全部消息吗？此操作不可撤销。')) {
+                socketRef.current?.emit('clear-all-messages')
+              }
+            }}
+            className="px-3 py-1 rounded text-xs font-medium bg-white/10 text-white/80 hover:bg-white/20 transition-colors cursor-pointer"
+          >
+            清空消息
+          </button>
           <button
             onClick={() => { setKickMode(!kickMode); setKickTarget(null) }}
             className={`px-3 py-1 rounded text-xs font-medium transition-colors cursor-pointer ${

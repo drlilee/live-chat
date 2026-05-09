@@ -101,6 +101,13 @@ io.on('connection', (socket) => {
     }
   })
 
+  socket.on('clear-all-messages', () => {
+    if (!io.sockets.adapter.rooms.get('admins')?.has(socket.id)) return
+    messageHistory.length = 0
+    io.to('group').emit('all-messages-cleared')
+    console.log('All messages cleared by admin')
+  })
+
   socket.on('disconnect', () => {
     if (user) {
       users.delete(socket.id)

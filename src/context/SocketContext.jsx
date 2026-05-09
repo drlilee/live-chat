@@ -52,8 +52,13 @@ export function SocketProvider({ children }) {
     })
   }
 
+  const clearMessages = () => {
+    setHistory([])
+    try { localStorage.removeItem(STORAGE_KEY) } catch {}
+  }
+
   return (
-    <SocketContext.Provider value={{ socket: socketRef, connected, me, history, addMessage, removeMessage, announcement }}>
+    <SocketContext.Provider value={{ socket: socketRef, connected, me, history, addMessage, removeMessage, clearMessages, announcement }}>
       {children}
     </SocketContext.Provider>
   )
