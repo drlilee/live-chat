@@ -15,6 +15,7 @@ export default function GroupChat() {
   const [kicked, setKicked] = useState(false)
   const [showEmoji, setShowEmoji] = useState(false)
   const [showMention, setShowMention] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
   const bottomRef = useRef(null)
   const inputRef = useRef(null)
 
@@ -127,6 +128,10 @@ export default function GroupChat() {
 
   const isMe = (msg) => msg.from === me?.id
 
+  const filteredHistory = searchQuery.trim()
+    ? history.filter(msg => msg.type === 'text' && msg.text.toLowerCase().includes(searchQuery.toLowerCase()))
+    : history
+
   // Show name modal until user has joined
   if (kicked) {
     return (
@@ -151,13 +156,32 @@ export default function GroupChat() {
   return (
     <div className="h-screen flex flex-col bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
       {/* Header */}
-      <header className="h-12 flex items-center justify-between px-4 bg-primary-500 shrink-0">
+      <header className="h-12 flex items-center justify-between px-4 bg-primary-500 shrink-0 gap-3">
         <div className="flex items-center gap-2">
           <span className="text-white font-semibold text-sm">三1班八卦群</span>
           <span className={`w-2 h-2 rounded-full ${connected ? 'bg-green-300' : 'bg-red-400'}`} />
           <span className="text-white/70 text-xs">{users.length} 人在线</span>
         </div>
-        <ThemeToggle light />
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder="搜索..."
+              className="w-32 md:w-44 px-3 py-1 rounded-md bg-white/10 text-white text-xs outline-none border border-white/20 focus:bg-white/20 focus:border-white/40 transition-colors placeholder-white/50"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-1 top-1/2 -translate-y-1/2 text-white/70 hover:text-white text-xs cursor-pointer"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+          <ThemeToggle light />
+        </div>
       </header>
 
       <div className="flex-1 flex min-h-0">
@@ -193,10 +217,17 @@ export default function GroupChat() {
                 </div>
               </div>
             )}
-            {history.length === 0 && announcement == null && (
-              <div className="text-center mt-20 text-gray-400 text-sm">暂无消息，来打个招呼吧</div>
+            {searchQuery && (
+              <div className="text-center text-xs text-gray-400 py-2 bg-gray-100 dark:bg-gray-800/50">
+                搜索 "{searchQuery}" — 找到 {filteredHistory.length} 条消息
+              </div>
             )}
-            {history.map(msg => {
+            {filteredHistory.length === 0 && announcement == null && (
+              <div className="text-center mt-20 text-gray-400 text-sm">
+                {searchQuery ? '没有找到匹配的消息' : '暂无消息，来打个招呼吧'}
+              </div>
+            )}
+            {filteredHistory.map(msg => {
               const mine = isMe(msg)
               const isImg = msg.type === 'image'
               const isFile = msg.type === 'file'
