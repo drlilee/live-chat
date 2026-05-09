@@ -8,6 +8,7 @@ export default function GroupChat() {
   const { socket, connected, me, history, addMessage, announcement } = useSocket()
   const [users, setUsers] = useState([])
   const [text, setText] = useState('')
+  const [kicked, setKicked] = useState(false)
   const bottomRef = useRef(null)
   const inputRef = useRef(null)
 
@@ -19,12 +20,14 @@ export default function GroupChat() {
     s.on('user-joined', (user) => setUsers(prev => prev.find(u => u.id === user.id) ? prev : [...prev, user]))
     s.on('user-left', (id) => setUsers(prev => prev.filter(u => u.id !== id)))
     s.on('message', (msg) => addMessage(msg))
+    s.on('kicked', () => setKicked(true))
 
     return () => {
       s.off('user-list')
       s.off('user-joined')
       s.off('user-left')
       s.off('message')
+      s.off('kicked')
     }
   }, [socket, connected])
 
@@ -61,6 +64,22 @@ export default function GroupChat() {
   const isMe = (msg) => msg.from === me?.id
 
   // Show name modal until user has joined
+  if (kicked) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
+        <div className="text-center p-8">
+          <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+            <svg className="w-10 h-10 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-2">您已被踢出聊群</h2>
+          <p className="text-gray-500 dark:text-gray-400">如有疑问请联系管理员</p>
+        </div>
+      </div>
+    )
+  }
+
   if (!me) {
     return <NameModal onJoin={handleJoin} connecting={!connected} />
   }

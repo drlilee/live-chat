@@ -77,6 +77,21 @@ io.on('connection', (socket) => {
     }
   })
 
+  socket.on('kick-user', (targetId) => {
+    if (!io.sockets.adapter.rooms.get('admins')?.has(socket.id)) return
+    const target = io.sockets.sockets.get(targetId)
+    if (target && users.has(targetId)) {
+      const kickedUser = users.get(targetId)
+      target.emit('kicked')
+      target.disconnect()
+      users.delete(targetId)
+      io.to('group').emit('user-left', targetId)
+      io.to('group').emit('user-list', Array.from(users.values()))
+      io.to('admins').emit('user-list', Array.from(users.values()))
+      console.log(`${kickedUser.name} was kicked by admin`)
+    }
+  })
+
   socket.on('disconnect', () => {
     if (user) {
       users.delete(socket.id)

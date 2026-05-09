@@ -62,6 +62,8 @@ export default function Admin() {
   const [authError, setAuthError] = useState('')
   const [users, setUsers] = useState([])
   const [messages, setMessages] = useState(loadAdminMessages)
+  const [kickMode, setKickMode] = useState(false)
+  const [kickTarget, setKickTarget] = useState(null)
   const socketRef = useRef(null)
   const bottomRef = useRef(null)
 
@@ -113,7 +115,17 @@ export default function Admin() {
           <span className="text-white font-semibold text-sm">三1班八卦群管理端</span>
           <span className="text-white/70 text-xs">{users.length} 人在线</span>
         </div>
-        <ThemeToggle light />
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => { setKickMode(!kickMode); setKickTarget(null) }}
+            className={`px-3 py-1 rounded text-xs font-medium transition-colors cursor-pointer ${
+              kickMode ? 'bg-red-500 text-white' : 'bg-white/10 text-white/80 hover:bg-white/20'
+            }`}
+          >
+            {kickMode ? '取消踢人' : '踢人'}
+          </button>
+          <ThemeToggle light />
+        </div>
       </header>
 
       <div className="flex-1 flex min-h-0">
@@ -124,13 +136,19 @@ export default function Admin() {
           </div>
           <div className="flex-1 overflow-y-auto p-2">
             {users.map(u => (
-              <div key={u.id} className="flex items-center gap-2 px-2 py-1.5 rounded-lg">
+              <button
+                key={u.id}
+                onClick={() => kickMode && setKickTarget(u)}
+                className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left transition-colors ${
+                  kickMode ? 'cursor-pointer hover:bg-red-50 dark:hover:bg-red-900/20' : ''
+                } ${kickTarget?.id === u.id ? 'bg-red-100 dark:bg-red-900/30 ring-1 ring-red-400' : ''}`}
+              >
                 <div className="w-8 h-8 rounded-md flex items-center justify-center text-white font-bold text-sm shrink-0"
                   style={{ backgroundColor: u.color }}>
                   {u.name[0]}
                 </div>
                 <span className="text-sm truncate">{u.name}</span>
-              </div>
+              </button>
             ))}
           </div>
         </div>
@@ -167,6 +185,43 @@ export default function Admin() {
           </div>
         </div>
       </div>
+
+      {/* Kick confirm dialog */}
+      {kickTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-sm mx-4">
+            <div className="text-center mb-4">
+              <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                <svg className="w-6 h-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-bold">确认踢出</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                确定要将 <span className="font-semibold" style={{ color: kickTarget.color }}>{kickTarget.name}</span> 踢出聊群吗？
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setKickTarget(null)}
+                className="flex-1 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 font-medium text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer"
+              >
+                取消
+              </button>
+              <button
+                onClick={() => {
+                  socketRef.current?.emit('kick-user', kickTarget.id)
+                  setKickTarget(null)
+                  setKickMode(false)
+                }}
+                className="flex-1 py-2.5 rounded-lg bg-red-500 text-white font-medium text-sm hover:bg-red-600 transition-colors cursor-pointer"
+              >
+                确认踢出
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
