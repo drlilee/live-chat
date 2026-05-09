@@ -63,6 +63,7 @@ export default function Admin() {
     })
 
     s.on('message', (msg) => {
+      console.log('[Admin] message received:', msg.type, msg.from, msg.text?.slice(0, 20), 'hasImage:', !!msg.image)
       const key = msg.visitorId
       if (!key) return
       setConversations(prev => ({
