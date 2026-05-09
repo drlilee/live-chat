@@ -98,6 +98,13 @@ export default function Admin() {
         return next
       })
     })
+    s.on('message-recalled', (msgId) => {
+      setMessages(prev => {
+        const next = prev.filter(m => m.id !== msgId)
+        try { localStorage.setItem(ADMIN_KEY, JSON.stringify(next)) } catch {}
+        return next
+      })
+    })
 
     return () => { s.disconnect() }
   }, [])

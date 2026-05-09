@@ -44,8 +44,16 @@ export function SocketProvider({ children }) {
     })
   }
 
+  const removeMessage = (msgId) => {
+    setHistory(prev => {
+      const next = prev.filter(m => m.id !== msgId)
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)) } catch {}
+      return next
+    })
+  }
+
   return (
-    <SocketContext.Provider value={{ socket: socketRef, connected, me, history, addMessage, announcement }}>
+    <SocketContext.Provider value={{ socket: socketRef, connected, me, history, addMessage, removeMessage, announcement }}>
       {children}
     </SocketContext.Provider>
   )

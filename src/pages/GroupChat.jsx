@@ -5,7 +5,7 @@ import NameModal from '../components/ui/NameModal'
 import ThemeToggle from '../components/ui/ThemeToggle'
 
 export default function GroupChat() {
-  const { socket, connected, me, history, addMessage, announcement } = useSocket()
+  const { socket, connected, me, history, addMessage, removeMessage, announcement } = useSocket()
   const [users, setUsers] = useState([])
   const [text, setText] = useState('')
   const [kicked, setKicked] = useState(false)
@@ -20,6 +20,7 @@ export default function GroupChat() {
     s.on('user-joined', (user) => setUsers(prev => prev.find(u => u.id === user.id) ? prev : [...prev, user]))
     s.on('user-left', (id) => setUsers(prev => prev.filter(u => u.id !== id)))
     s.on('message', (msg) => addMessage(msg))
+    s.on('message-recalled', (msgId) => removeMessage(msgId))
     s.on('kicked', () => setKicked(true))
 
     return () => {
@@ -27,6 +28,7 @@ export default function GroupChat() {
       s.off('user-joined')
       s.off('user-left')
       s.off('message')
+      s.off('message-recalled')
       s.off('kicked')
     }
   }, [socket, connected])
@@ -36,6 +38,12 @@ export default function GroupChat() {
   const handleJoin = (name) => {
     if (socket.current) {
       socket.current.emit('join', name)
+    }
+  }
+
+  const handleRecall = (msgId) => {
+    if (socket.current) {
+      socket.current.emit('recall-message', msgId)
     }
   }
 
@@ -155,7 +163,18 @@ export default function GroupChat() {
                         : msg.text
                       }
                     </div>
-                    <p className={`text-[10px] text-gray-400 mt-1 ${mine ? 'text-right' : 'text-left'}`}>{msg.time}</p>
+                    <div className={`flex items-center gap-1 mt-1 ${mine ? 'justify-end' : 'justify-start'}`}>
+                      <p className="text-[10px] text-gray-400">{msg.time}</p>
+                      {mine && msg.type !== 'image' && (
+                        <button
+                          onClick={() => handleRecall(msg.id)}
+                          className="text-[10px] text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
+                          title="撤回"
+                        >
+                          撤回
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               )

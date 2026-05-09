@@ -77,6 +77,15 @@ io.on('connection', (socket) => {
     }
   })
 
+  socket.on('recall-message', (msgId) => {
+    if (!user) return
+    const idx = messageHistory.findIndex(m => m.id === msgId && m.from === socket.id)
+    if (idx !== -1) {
+      messageHistory.splice(idx, 1)
+      io.to('group').emit('message-recalled', msgId)
+    }
+  })
+
   socket.on('kick-user', (targetId) => {
     if (!io.sockets.adapter.rooms.get('admins')?.has(socket.id)) return
     const target = io.sockets.sockets.get(targetId)
