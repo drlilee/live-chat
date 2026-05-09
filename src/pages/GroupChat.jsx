@@ -3,12 +3,15 @@ import { useSocket } from '../hooks/useSocket'
 import { pickAndResizeImage } from '../utils/image'
 import NameModal from '../components/ui/NameModal'
 import ThemeToggle from '../components/ui/ThemeToggle'
+import EmojiPicker from '../components/chat/EmojiPicker'
+import VoiceInput from '../components/chat/VoiceInput'
 
 export default function GroupChat() {
   const { socket, connected, me, history, addMessage, removeMessage, clearMessages, announcement } = useSocket()
   const [users, setUsers] = useState([])
   const [text, setText] = useState('')
   const [kicked, setKicked] = useState(false)
+  const [showEmoji, setShowEmoji] = useState(false)
   const bottomRef = useRef(null)
   const inputRef = useRef(null)
 
@@ -47,6 +50,26 @@ export default function GroupChat() {
     if (socket.current) {
       socket.current.emit('recall-message', msgId)
     }
+  }
+
+  const insertEmoji = (emoji) => {
+    const el = inputRef.current
+    if (el) {
+      const start = el.selectionStart
+      const end = el.selectionEnd
+      const newText = text.slice(0, start) + emoji + text.slice(end)
+      setText(newText)
+      setTimeout(() => {
+        el.selectionStart = el.selectionEnd = start + emoji.length
+        el.focus()
+      }, 0)
+    }
+    setShowEmoji(false)
+  }
+
+  const handleVoiceResult = (spoken) => {
+    setText(prev => prev + spoken)
+    inputRef.current?.focus()
   }
 
   const sendText = () => {
@@ -186,9 +209,19 @@ export default function GroupChat() {
 
           {/* Input */}
           <div className="flex items-end gap-2 p-3 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shrink-0">
+            <VoiceInput onResult={handleVoiceResult} />
+            <div className="relative">
+              <button onClick={() => setShowEmoji(!showEmoji)} disabled={!connected}
+                className="p-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 transition-colors cursor-pointer shrink-0 text-gray-500">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </button>
+              {showEmoji && <EmojiPicker onSelect={insertEmoji} onClose={() => setShowEmoji(false)} />}
+            </div>
             <button onClick={sendImage} disabled={!connected}
-              className="p-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 transition-colors cursor-pointer shrink-0">
-              <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              className="p-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 transition-colors cursor-pointer shrink-0 text-gray-500">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
             </button>
