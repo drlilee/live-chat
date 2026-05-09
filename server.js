@@ -12,7 +12,10 @@ const io = new Server(http, { cors: { origin: '*' } })
 app.use(express.static(join(__dirname, 'dist'), {
   setHeaders: (res) => res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate')
 }))
-app.use((_req, res) => res.sendFile(join(__dirname, 'dist', 'index.html')))
+app.use((_req, res) => {
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate')
+  res.sendFile(join(__dirname, 'dist', 'index.html'))
+})
 
 const colors = ['#f43f5e','#8b5cf6','#06b6d4','#f59e0b','#10b981','#6366f1',
   '#ec4899','#14b8a6','#f97316','#3b82f6','#e11d48','#7c3aed']

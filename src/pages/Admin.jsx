@@ -13,7 +13,7 @@ function PasswordModal({ onSubmit, error }) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
             </svg>
           </div>
-          <h2 className="text-xl font-bold">管理后台</h2>
+          <h2 className="text-xl font-bold">三1班八卦群管理端</h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">请输入管理密码</p>
         </div>
         <form onSubmit={e => { e.preventDefault(); onSubmit(pwd) }}>
@@ -133,7 +133,7 @@ export default function Admin() {
           </div>
 
           <div className="p-3 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-center text-sm text-gray-400">
-            管理端 — 只读模式查看群聊
+            三1班八卦群管理端 — 只读模式
           </div>
         </div>
       </div>
