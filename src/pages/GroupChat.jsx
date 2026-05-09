@@ -6,6 +6,7 @@ import NameModal from '../components/ui/NameModal'
 import ThemeToggle from '../components/ui/ThemeToggle'
 import EmojiPicker from '../components/chat/EmojiPicker'
 import VoiceInput from '../components/chat/VoiceInput'
+import MentionPicker from '../components/chat/MentionPicker'
 
 export default function GroupChat() {
   const { socket, connected, me, history, addMessage, removeMessage, clearMessages, announcement } = useSocket()
@@ -13,6 +14,7 @@ export default function GroupChat() {
   const [text, setText] = useState('')
   const [kicked, setKicked] = useState(false)
   const [showEmoji, setShowEmoji] = useState(false)
+  const [showMention, setShowMention] = useState(false)
   const bottomRef = useRef(null)
   const inputRef = useRef(null)
 
@@ -71,6 +73,24 @@ export default function GroupChat() {
   const handleVoiceResult = (spoken) => {
     setText(prev => prev + spoken)
     inputRef.current?.focus()
+  }
+
+  const handleMention = (name) => {
+    const el = inputRef.current
+    const at = `@${name} `
+    if (el) {
+      const start = el.selectionStart
+      const end = el.selectionEnd
+      const newText = text.slice(0, start) + at + text.slice(end)
+      setText(newText)
+      setTimeout(() => {
+        el.selectionStart = el.selectionEnd = start + at.length
+        el.focus()
+      }, 0)
+    } else {
+      setText(prev => prev + at)
+    }
+    setShowMention(false)
   }
 
   const sendText = () => {
@@ -180,9 +200,10 @@ export default function GroupChat() {
               const mine = isMe(msg)
               const isImg = msg.type === 'image'
               const isFile = msg.type === 'file'
+              const mentionsMe = me && msg.text && (msg.text.includes(`@${me.name}`) || msg.text.includes('@所有人'))
               return (
                 <div key={msg.id} className={`flex ${mine ? 'justify-end' : 'justify-start'} mb-4 px-4`}>
-                  <div className="max-w-[70%]">
+                  <div className={`max-w-[70%] ${mentionsMe ? 'ring-2 ring-blue-400/50 rounded-lg' : ''}`}>
                     {!mine && (
                       <p className="text-xs mb-1 ml-1" style={{ color: msg.color }}>{msg.name}</p>
                     )}
@@ -249,6 +270,13 @@ export default function GroupChat() {
                 </svg>
               </button>
               {showEmoji && <EmojiPicker onSelect={insertEmoji} onClose={() => setShowEmoji(false)} />}
+            </div>
+            <div className="relative">
+              <button onClick={() => setShowMention(!showMention)} disabled={!connected}
+                className="p-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 transition-colors cursor-pointer shrink-0 text-gray-500 font-bold text-sm">
+                @
+              </button>
+              {showMention && <MentionPicker users={users} me={me} onSelect={handleMention} onClose={() => setShowMention(false)} />}
             </div>
             <button onClick={sendImage} disabled={!connected}
               className="p-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 transition-colors cursor-pointer shrink-0 text-gray-500">
