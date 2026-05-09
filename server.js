@@ -15,6 +15,11 @@ const io = new Server(http, {
 // Serve static files in production
 app.use(express.static(join(__dirname, 'dist')))
 
+// SPA fallback: all non-static routes go to index.html
+app.use((_req, res) => {
+  res.sendFile(join(__dirname, 'dist', 'index.html'))
+})
+
 // In-memory store
 const visitors = new Map()   // socketId -> { id, name, unread }
 const admins = new Set()     // admin socket ids
