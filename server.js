@@ -5,118 +5,61 @@ import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-
 const app = express()
 const http = createServer(app)
-const io = new Server(http, {
-  cors: { origin: '*' },
-})
+const io = new Server(http, { cors: { origin: '*' } })
 
-// Serve static files in production (no caching for SPA)
 app.use(express.static(join(__dirname, 'dist'), {
-  setHeaders: (res) => {
-    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate')
-  }
+  setHeaders: (res) => res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate')
 }))
+app.use((_req, res) => res.sendFile(join(__dirname, 'dist', 'index.html')))
 
-// SPA fallback: all non-static routes go to index.html
-app.use((_req, res) => {
-  res.sendFile(join(__dirname, 'dist', 'index.html'))
-})
+const names = ['小明', '小红', '大壮', '阿花', '老张', '小丽', '阿强', '美美', '石头', '小雪',
+  '乐乐', '豆豆', '果果', '圆圆', '大宝', '二丫', '三胖', '四儿', '五哥', '六妹']
 
-// In-memory store: socketId -> { id, name, unread }
-const visitors = new Map()
+let nameIdx = 0
+const users = new Map() // socketId -> { id, name, color }
+
+const colors = ['#f43f5e','#8b5cf6','#06b6d4','#f59e0b','#10b981','#6366f1',
+  '#ec4899','#14b8a6','#f97316','#3b82f6']
 
 io.on('connection', (socket) => {
-  const role = socket.handshake.query.role
+  const name = names[nameIdx % names.length]
+  nameIdx++
+  const user = { id: socket.id, name, color: colors[nameIdx % colors.length] }
+  users.set(socket.id, user)
 
-  // === Admin ===
-  if (role === 'admin') {
-    socket.join('admins')
-    console.log(`Admin connected: ${socket.id}`)
-    socket.emit('visitor-list', Array.from(visitors.values()))
+  console.log(`${name} joined (${users.size} online)`)
+  socket.join('group')
 
-    socket.on('send-to-visitor', ({ visitorId, type, text, image }) => {
-      console.log(`Admin sending to visitor ${visitorId}: ${type === 'image' ? '[图片]' : text}`)
-      const msg = {
-        id: `m_${Date.now()}`,
-        from: 'admin',
-        type: type || 'text',
-        text: text || '',
-        image: image || '',
-        time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
-      }
-      let found = false
-      for (const [sid, v] of visitors) {
-        if (v.id === visitorId) {
-          io.to(sid).emit('message', msg)
-          console.log(`  -> delivered to visitor socket ${sid}`)
-          found = true
-          break
-        }
-      }
-      if (!found) console.log(`  -> visitor not found!`)
-      // Echo to all admins
-      const admins = io.sockets.adapter.rooms.get('admins')
-      console.log(`  -> echoing to admins room (${admins ? admins.size : 0} admins)`)
-      io.to('admins').emit('message', { ...msg, visitorId })
-    })
+  // Welcome message
+  socket.emit('welcome', { you: user, users: Array.from(users.values()) })
+  // Notify others
+  socket.to('group').emit('user-joined', user)
+  socket.to('group').emit('user-list', Array.from(users.values()))
 
-    socket.on('clear-unread', (visitorId) => {
-      for (const [, v] of visitors) {
-        if (v.id === visitorId) { v.unread = 0; break }
-      }
-      io.to('admins').emit('visitor-list', Array.from(visitors.values()))
-    })
-
-    socket.on('disconnect', () => {
-      console.log(`Admin disconnected: ${socket.id}`)
-    })
-    return
-  }
-
-  // === Visitor ===
-  const visitorId = `v_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
-  const name = `访客${visitorId.slice(-4)}`
-  const visitor = { id: visitorId, name, unread: 0 }
-  visitors.set(socket.id, visitor)
-
-  console.log(`Visitor connected: ${name}`)
-
-  io.to('admins').emit('visitor-joined', visitor)
-  io.to('admins').emit('visitor-list', Array.from(visitors.values()))
-  socket.emit('welcome', visitor)
-
-  socket.on('visitor-message', (data) => {
-    console.log(`Visitor ${visitor.name} says: ${data.type === 'image' ? '[图片]' : data.text}`)
+  // Chat message
+  socket.on('chat', (data) => {
     const msg = {
       id: `m_${Date.now()}`,
-      from: 'visitor',
-      visitorId: visitor.id,
-      visitorName: visitor.name,
+      from: socket.id,
+      name: user.name,
+      color: user.color,
       type: data.type || 'text',
       text: data.text || '',
       image: data.image || '',
       time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
     }
-    const admins = io.sockets.adapter.rooms.get('admins')
-    console.log(`  -> forwarding to admins room (${admins ? admins.size : 0} admins)`)
-    io.to('admins').emit('message', msg)
-
-    const v = visitors.get(socket.id)
-    if (v) v.unread++
-    io.to('admins').emit('visitor-list', Array.from(visitors.values()))
+    io.to('group').emit('message', msg)
   })
 
   socket.on('disconnect', () => {
-    visitors.delete(socket.id)
-    io.to('admins').emit('visitor-left', visitorId)
-    io.to('admins').emit('visitor-list', Array.from(visitors.values()))
-    console.log(`Visitor disconnected: ${name}`)
+    users.delete(socket.id)
+    console.log(`${name} left (${users.size} online)`)
+    io.to('group').emit('user-left', socket.id)
+    io.to('group').emit('user-list', Array.from(users.values()))
   })
 })
 
 const PORT = process.env.PORT || 3000
-http.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`)
-})
+http.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`))

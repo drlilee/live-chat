@@ -1,34 +1,24 @@
-import { createContext, useEffect, useState, useRef, useCallback } from 'react'
+import { createContext, useEffect, useState, useRef } from 'react'
 import { io } from 'socket.io-client'
 
 export const SocketContext = createContext()
 
-const SOCKET_URL = ''
-
-export function SocketProvider({ role, children }) {
+export function SocketProvider({ children }) {
   const [connected, setConnected] = useState(false)
-  const [visitor, setVisitor] = useState(null)
+  const [me, setMe] = useState(null)
   const socketRef = useRef(null)
 
   useEffect(() => {
-    const socket = io(SOCKET_URL, { query: { role } })
+    const socket = io('', { transports: ['websocket', 'polling'] })
     socketRef.current = socket
-
     socket.on('connect', () => setConnected(true))
     socket.on('disconnect', () => setConnected(false))
+    socket.on('welcome', (data) => setMe(data.you))
+    return () => { socket.disconnect() }
+  }, [])
 
-    if (role === 'visitor') {
-      socket.on('welcome', (data) => setVisitor(data))
-    }
-
-    return () => {
-      socket.disconnect()
-    }
-  }, [role])
-
-  const value = { socket: socketRef, connected, visitor, setVisitor }
   return (
-    <SocketContext.Provider value={value}>
+    <SocketContext.Provider value={{ socket: socketRef, connected, me }}>
       {children}
     </SocketContext.Provider>
   )
