@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useSocket } from '../hooks/useSocket'
 import { pickAndResizeImage } from '../utils/image'
+import NameModal from '../components/ui/NameModal'
 import ThemeToggle from '../components/ui/ThemeToggle'
 
 export default function GroupChat() {
@@ -30,6 +31,12 @@ export default function GroupChat() {
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages])
 
+  const handleJoin = (name) => {
+    if (socket.current) {
+      socket.current.emit('join', name)
+    }
+  }
+
   const sendText = () => {
     if (!text.trim() || !socket.current) return
     socket.current.emit('chat', { type: 'text', text })
@@ -54,6 +61,11 @@ export default function GroupChat() {
 
   const isMe = (msg) => msg.from === me?.id
 
+  // Show name modal until user has joined
+  if (!me) {
+    return <NameModal onJoin={handleJoin} />
+  }
+
   return (
     <div className="h-screen flex flex-col bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
       {/* Header */}
@@ -70,7 +82,7 @@ export default function GroupChat() {
         {/* User list */}
         <div className="hidden md:flex w-56 shrink-0 border-r border-gray-200 dark:border-gray-700 flex-col bg-gray-50 dark:bg-gray-800/50">
           <div className="p-3 border-b border-gray-200 dark:border-gray-700">
-            <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">在线成员</span>
+            <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">在线成员 ({users.length})</span>
           </div>
           <div className="flex-1 overflow-y-auto p-2">
             {users.map(u => (
@@ -90,14 +102,7 @@ export default function GroupChat() {
         <div className="flex-1 flex flex-col min-w-0">
           <div className="flex-1 overflow-y-auto py-4 bg-gray-50 dark:bg-gray-800/30">
             {messages.length === 0 && (
-              <div className="text-center mt-20">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center">
-                  <svg className="w-8 h-8 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
-                  </svg>
-                </div>
-                <p className="text-gray-400 text-sm">暂无消息，来打个招呼吧</p>
-              </div>
+              <div className="text-center mt-20 text-gray-400 text-sm">暂无消息，来打个招呼吧</div>
             )}
             {messages.map(msg => {
               const mine = isMe(msg)
@@ -139,7 +144,7 @@ export default function GroupChat() {
               </svg>
             </button>
             <textarea ref={inputRef} value={text} onChange={e => setText(e.target.value)} onKeyDown={handleKeyDown}
-              placeholder={`${me ? me.name + '，' : ''}说点什么...`} rows={1}
+              placeholder={`${me?.name || ''}，说点什么...`} rows={1}
               className="flex-1 px-4 py-2.5 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 resize-none outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 text-sm" />
             <button onClick={sendText} disabled={!text.trim() || !connected}
               className="px-5 py-2.5 rounded-lg bg-primary-500 text-white font-medium text-sm hover:bg-primary-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer shrink-0">

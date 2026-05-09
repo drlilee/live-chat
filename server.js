@@ -14,32 +14,33 @@ app.use(express.static(join(__dirname, 'dist'), {
 }))
 app.use((_req, res) => res.sendFile(join(__dirname, 'dist', 'index.html')))
 
-const names = ['小明', '小红', '大壮', '阿花', '老张', '小丽', '阿强', '美美', '石头', '小雪',
-  '乐乐', '豆豆', '果果', '圆圆', '大宝', '二丫', '三胖', '四儿', '五哥', '六妹']
-
-let nameIdx = 0
-const users = new Map() // socketId -> { id, name, color }
-
 const colors = ['#f43f5e','#8b5cf6','#06b6d4','#f59e0b','#10b981','#6366f1',
-  '#ec4899','#14b8a6','#f97316','#3b82f6']
+  '#ec4899','#14b8a6','#f97316','#3b82f6','#e11d48','#7c3aed']
+
+const users = new Map()      // socketId -> { id, name, color }
+const adminPassword = 'admin123'
 
 io.on('connection', (socket) => {
-  const name = names[nameIdx % names.length]
-  nameIdx++
-  const user = { id: socket.id, name, color: colors[nameIdx % colors.length] }
-  users.set(socket.id, user)
+  let user = null
 
-  console.log(`${name} joined (${users.size} online)`)
-  socket.join('group')
+  socket.on('join', (name) => {
+    const cleanName = name.trim().slice(0, 12) || '游客'
+    user = {
+      id: socket.id,
+      name: cleanName,
+      color: colors[Math.floor(Math.random() * colors.length)],
+    }
+    users.set(socket.id, user)
+    socket.join('group')
 
-  // Welcome message
-  socket.emit('welcome', { you: user, users: Array.from(users.values()) })
-  // Notify others
-  socket.to('group').emit('user-joined', user)
-  socket.to('group').emit('user-list', Array.from(users.values()))
+    console.log(`${cleanName} joined (${users.size} online)`)
+    socket.emit('welcome', user)
+    io.to('group').emit('user-joined', user)
+    io.to('group').emit('user-list', Array.from(users.values()))
+  })
 
-  // Chat message
   socket.on('chat', (data) => {
+    if (!user) return
     const msg = {
       id: `m_${Date.now()}`,
       from: socket.id,
@@ -53,11 +54,24 @@ io.on('connection', (socket) => {
     io.to('group').emit('message', msg)
   })
 
+  // Admin auth
+  socket.on('admin-auth', (password, cb) => {
+    if (password === adminPassword) {
+      socket.join('admins')
+      cb({ ok: true, users: Array.from(users.values()) })
+    } else {
+      cb({ ok: false })
+    }
+  })
+
   socket.on('disconnect', () => {
-    users.delete(socket.id)
-    console.log(`${name} left (${users.size} online)`)
-    io.to('group').emit('user-left', socket.id)
-    io.to('group').emit('user-list', Array.from(users.values()))
+    if (user) {
+      users.delete(socket.id)
+      console.log(`${user.name} left (${users.size} online)`)
+      io.to('group').emit('user-left', socket.id)
+      io.to('group').emit('user-list', Array.from(users.values()))
+      io.to('admins').emit('user-list', Array.from(users.values()))
+    }
   })
 })
 
