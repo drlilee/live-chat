@@ -36,12 +36,14 @@ io.on('connection', (socket) => {
     console.log(`Admin connected: ${socket.id}`)
     socket.emit('visitor-list', Array.from(visitors.values()))
 
-    socket.on('send-to-visitor', ({ visitorId, text }) => {
-      console.log(`Admin sending to visitor ${visitorId}: ${text}`)
+    socket.on('send-to-visitor', ({ visitorId, type, text, image }) => {
+      console.log(`Admin sending to visitor ${visitorId}: ${type === 'image' ? '[图片]' : text}`)
       const msg = {
         id: `m_${Date.now()}`,
         from: 'admin',
-        text,
+        type: type || 'text',
+        text: text || '',
+        image: image || '',
         time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
       }
       let found = false
@@ -86,13 +88,15 @@ io.on('connection', (socket) => {
   socket.emit('welcome', visitor)
 
   socket.on('visitor-message', (data) => {
-    console.log(`Visitor ${visitor.name} says: ${data.text}`)
+    console.log(`Visitor ${visitor.name} says: ${data.type === 'image' ? '[图片]' : data.text}`)
     const msg = {
       id: `m_${Date.now()}`,
       from: 'visitor',
       visitorId: visitor.id,
       visitorName: visitor.name,
-      text: data.text,
+      type: data.type || 'text',
+      text: data.text || '',
+      image: data.image || '',
       time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
     }
     const admins = io.sockets.adapter.rooms.get('admins')
