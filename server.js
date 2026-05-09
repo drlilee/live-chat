@@ -58,6 +58,7 @@ io.on('connection', (socket) => {
   socket.on('admin-auth', (password, cb) => {
     if (password === adminPassword) {
       socket.join('admins')
+      socket.join('group')
       cb({ ok: true, users: Array.from(users.values()) })
     } else {
       cb({ ok: false })
