@@ -11,9 +11,9 @@ export default function Admin() {
   const bottomRef = useRef(null)
   const inputRef = useRef(null)
 
-  // Socket event handlers
+  // Socket event handlers — wait for connected to ensure socket is ready
   useEffect(() => {
-    if (!socket.current) return
+    if (!socket.current || !connected) return
     const s = socket.current
 
     s.on('visitor-list', (list) => {
@@ -33,7 +33,6 @@ export default function Admin() {
     })
 
     s.on('message', (msg) => {
-      const vid = msg.visitorId || (msg.from === 'admin' ? null : msg.visitorId)
       const key = msg.visitorId
       if (!key) return
       setConversations(prev => ({
@@ -48,7 +47,7 @@ export default function Admin() {
       s.off('visitor-left')
       s.off('message')
     }
-  }, [socket])
+  }, [socket, connected])
 
   // Scroll to bottom when messages change
   useEffect(() => {

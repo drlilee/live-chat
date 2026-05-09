@@ -10,7 +10,7 @@ export default function Visitor() {
   const inputRef = useRef(null)
 
   useEffect(() => {
-    if (!socket.current) return
+    if (!socket.current || !connected) return
     const s = socket.current
 
     s.on('message', (msg) => {
@@ -18,7 +18,7 @@ export default function Visitor() {
     })
 
     return () => { s.off('message') }
-  }, [socket])
+  }, [socket, connected])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
