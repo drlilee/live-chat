@@ -30,7 +30,10 @@ export default function GroupChat() {
     s.on('message-recalled', (msgId) => removeMessage(msgId))
     s.on('kicked', () => setKicked(true))
     s.on('all-messages-cleared', () => clearMessages())
-    s.on('broadcast', (msg) => addMessage(msg))
+    s.on('broadcast', (msg) => {
+      addMessage(msg)
+      setTimeout(() => removeMessage(msg.id), 10000)
+    })
 
     return () => {
       s.off('user-list')
