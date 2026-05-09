@@ -6,6 +6,9 @@ import ThemeToggle from '../components/ui/ThemeToggle'
 function MessageBubble({ msg, activeVisitor }) {
   const isAdmin = msg.from === 'admin'
   const isImage = msg.type === 'image'
+  if (isImage) {
+    console.log('[Bubble] rendering image, src length:', msg.image?.length, 'from:', msg.from)
+  }
   return (
     <div className={`flex ${isAdmin ? 'justify-end' : 'justify-start'} mb-4 px-4`}>
       <div className="max-w-[70%]">
@@ -196,6 +199,7 @@ export default function Admin() {
                 {activeMsgs.length === 0 && (
                   <p className="text-center text-gray-400 text-sm mt-20">还没有消息</p>
                 )}
+                {(() => { console.log('[Chat] activeMsgs count:', activeMsgs.length, 'imageMsgs:', activeMsgs.filter(m => m.type === 'image').length); return null })()}
                 {activeMsgs.map(msg => (
                   <MessageBubble key={msg.id} msg={msg} activeVisitor={activeVisitor} />
                 ))}
